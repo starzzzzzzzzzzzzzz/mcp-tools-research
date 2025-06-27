@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP工具管理中心 - 独立版</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .dashboard-container { padding: 20px; min-height: 100vh; }
+        .header { text-align: center; margin-bottom: 30px; color: white; }
+        .header h1 { font-size: 3rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .real-system-badge {
+            background: linear-gradient(135deg, #67c23a, #85ce3a);
+            color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;
+            margin-top: 10px; display: inline-block; border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px; margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95); border-radius: 16px; padding: 25px;
+            text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+        .stat-icon { font-size: 3rem; margin-bottom: 15px; }
+        .stat-number { font-size: 2.5rem; font-weight: bold; margin-bottom: 5px; }
+        .scenario-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px; margin-top: 20px;
+        }
+        .scenario-card {
+            background: rgba(255, 255, 255, 0.95); border: 2px solid #e0e6ed; 
+            border-radius: 12px; padding: 20px; cursor: pointer; 
+            transition: all 0.3s ease; position: relative;
+        }
+        .scenario-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        .scenario-card.active {
+            border-color: #409eff; background: linear-gradient(135deg, #409eff20, #409eff10);
+        }
+        .scenario-header { display: flex; align-items: center; margin-bottom: 10px; }
+        .scenario-icon { font-size: 1.5rem; margin-right: 10px; width: 30px; }
+        .scenario-title { font-weight: bold; font-size: 1.1rem; }
+        .content-card {
+            background: rgba(255, 255, 255, 0.95); border-radius: 16px; padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .switch-button {
+            position: absolute; top: 10px; right: 10px;
+            background: #409eff; color: white; border: none; border-radius: 6px;
+            padding: 5px 10px; font-size: 0.8rem; cursor: pointer;
+        }
+        .switch-button:hover { background: #337ecc; }
+        .switch-button:disabled { background: #ccc; cursor: not-allowed; }
+        .terminal-display {
+            background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 8px;
+            font-family: 'Courier New', monospace; font-size: 14px; margin-top: 15px;
+            max-height: 300px; overflow-y: auto;
+        }
+        .command-line {
+            margin: 5px 0; white-space: pre-wrap;
+        }
+        .success { color: #67c23a; }
+        .error { color: #f56c6c; }
+        .warning { color: #e6a23c; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="dashboard-container">
+            <!-- 头部 -->
+            <div class="header">
+                <h1><i class="fas fa-tools"></i> MCP工具管理中心</h1>
+                <p>智能动态切换 • 突破40工具限制 • 专业场景优化</p>
+                <div class="real-system-badge">
+                    <i class="fas fa-check-circle"></i> 终端命令版 - 直接切换
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #67c23a;"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-number" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">70</div>
+                    <div class="stat-label">当前可用工具</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #409eff;"><i class="fas fa-desktop"></i></div>
+                    <div class="stat-number" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ getCurrentScenarioTools() }}</div>
+                    <div class="stat-label">当前场景工具</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #e6a23c;"><i class="fas fa-layer-group"></i></div>
+                    <div class="stat-number" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">8</div>
+                    <div class="stat-label">可用场景</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #f39c12;"><i class="fas fa-terminal"></i></div>
+                    <div class="stat-number" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">终端</div>
+                    <div class="stat-label">切换方式</div>
+                </div>
+            </div>
+
+            <!-- 场景管理 -->
+            <div class="content-card">
+                <h2><i class="fas fa-desktop"></i> 场景管理 - 终端命令版</h2>
+                <p>点击场景卡片生成切换命令，然后在终端执行</p>
+                
+                <div class="scenario-grid">
+                    <div v-for="(scenario, id) in scenarios" :key="id"
+                         class="scenario-card" 
+                         :class="{ active: currentScenario === id }"
+                         @click="generateCommand(id)">
+                        <button class="switch-button" @click.stop="generateCommand(id)">
+                            <i class="fas fa-terminal"></i> 生成命令
+                        </button>
+                        <div class="scenario-header">
+                            <div class="scenario-icon" style="color: #409eff;">
+                                <i class="fas fa-desktop"></i>
+                            </div>
+                            <div class="scenario-title">{{ scenario.name }}</div>
+                        </div>
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+                            {{ scenario.tools }}个工具
+                        </div>
+                        <div style="font-size: 0.85rem; color: #888; line-height: 1.4;">
+                            {{ scenario.description }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 终端命令显示 -->
+            <div class="content-card" v-if="terminalCommands.length > 0">
+                <h2><i class="fas fa-terminal"></i> 终端命令执行</h2>
+                <p>请复制以下命令到终端执行，完成MCP场景切换：</p>
+                
+                <div class="terminal-display">
+                    <div v-for="(cmd, index) in terminalCommands" :key="index" 
+                         class="command-line" :class="cmd.type">
+                        {{ cmd.text }}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px; text-align: center;">
+                    <button @click="copyToClipboard" 
+                            style="padding: 10px 20px; background: #67c23a; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px;">
+                        <i class="fas fa-copy"></i> 复制命令
+                    </button>
+                    <button @click="clearCommands" 
+                            style="padding: 10px 20px; background: #f56c6c; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-trash"></i> 清空
+                    </button>
+                </div>
+            </div>
+
+            <!-- 使用说明 -->
+            <div class="content-card">
+                <h2><i class="fas fa-info-circle"></i> 使用说明</h2>
+                <div style="line-height: 1.6;">
+                    <p><strong>1. 场景切换步骤：</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>点击上方场景卡片生成切换命令</li>
+                        <li>复制生成的终端命令</li>
+                        <li>在终端中执行命令</li>
+                        <li>重启Cursor使配置生效</li>
+                    </ul>
+                    
+                    <p><strong>2. 快速命令：</strong></p>
+                    <div class="terminal-display" style="margin: 10px 0;">
+<div class="command-line">cd /Users/zhangzhong/zz/C++</div>
+<div class="command-line">./mcp-switcher-final.sh [场景名称]</div>
+                    </div>
+                    
+                    <p><strong>3. 可用场景：</strong> github-dev, github-full, fullstack, github-web, testing, development, web, minimal</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElNotification } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    scenarios: {
+                        'github-dev': { name: 'GitHub开发', tools: 48, description: 'GitHub + 开发工具' },
+                        'github-full': { name: '完整GitHub', tools: 65, description: '最强GitHub配置' },
+                        'fullstack': { name: '全栈开发', tools: 63, description: '全栈开发必备' },
+                        'github-web': { name: 'GitHub网页', tools: 59, description: 'GitHub + 网页自动化' },
+                        'testing': { name: '测试监控', tools: 53, description: '专业测试场景' },
+                        'development': { name: '基础开发', tools: 48, description: '日常开发必备' },
+                        'web': { name: '网页自动化', tools: 44, description: '网页自动化和数据抓取' },
+                        'minimal': { name: '极简模式', tools: 11, description: '最轻量配置' }
+                    },
+                    currentScenario: 'web',
+                    terminalCommands: []
+                }
+            },
+            methods: {
+                generateCommand(scenarioId) {
+                    this.currentScenario = scenarioId;
+                    const scenario = this.scenarios[scenarioId];
+                    
+                    this.terminalCommands = [
+                        { type: 'success', text: `# 切换到 ${scenario.name} 场景 (${scenario.tools}个工具)` },
+                        { type: '', text: 'cd /Users/zhangzhong/zz/C++' },
+                        { type: '', text: `./mcp-switcher-final.sh ${scenarioId}` },
+                        { type: 'warning', text: '# 执行完成后请重启Cursor使配置生效' },
+                        { type: 'success', text: `# 场景描述: ${scenario.description}` }
+                    ];
+                    
+                    ElNotification({
+                        title: '命令已生成',
+                        message: `${scenario.name} 场景的切换命令已生成，请在终端中执行`,
+                        type: 'success',
+                        duration: 3000
+                    });
+                },
+                copyToClipboard() {
+                    const commands = this.terminalCommands
+                        .filter(cmd => !cmd.text.startsWith('#'))
+                        .map(cmd => cmd.text)
+                        .join('\n');
+                    
+                    navigator.clipboard.writeText(commands).then(() => {
+                        ElMessage.success('命令已复制到剪贴板');
+                    }).catch(() => {
+                        ElMessage.error('复制失败，请手动复制');
+                    });
+                },
+                clearCommands() {
+                    this.terminalCommands = [];
+                    ElMessage.info('命令已清空');
+                },
+                getCurrentScenarioTools() {
+                    return this.scenarios[this.currentScenario]?.tools || 0;
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
