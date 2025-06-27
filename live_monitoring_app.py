@@ -23,6 +23,9 @@ MCP_CONFIG_FILE = os.path.expanduser("~/.cursor/mcp.json")
 SWITCHER_SCRIPT = "../mcp-switcher-final.sh"
 SWITCHER_SCRIPT_PATH = os.path.join(os.path.dirname(__file__), SWITCHER_SCRIPT)
 
+# 修正路径 - 项目根目录已从 'C++' 改为 'MCP工具研究'
+PROJECT_ROOT = "/Users/zhangzhong/zz/MCP工具研究"
+
 # 工具映射表
 TOOL_MAPPING = {
     'mcp-server-filesystem': {
